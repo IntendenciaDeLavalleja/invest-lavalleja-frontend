@@ -31,6 +31,7 @@ Copiar `.env.example` a `.env` para la configuración local de Compose, o defini
 - CORS directo: `VITE_API_URL` contiene el origen HTTPS del backend, sin `/api`.
 - El chat se abre únicamente desde `/gianna/`; el login del panel está en `/admin/login` y la sesión autenticada en `/admin/`.
 - El panel reconoce nombres y roles. Sólo los superadministradores administran usuarios y consultan auditoría; cada administrador puede cambiar su contraseña.
+- El login presenta la Ventanilla Única de Inversiones de Lavalleja y solicita un captcha numérico, validado en el backend antes de enviar el código de acceso por correo.
 - Las rutas desconocidas bajo `/admin/` devuelven 404.
 - El historial se guarda en el navegador. Los cupos se validan en el backend.
 
