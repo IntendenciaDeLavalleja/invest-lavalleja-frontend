@@ -29,7 +29,9 @@ Copiar `.env.example` a `.env` para la configuración local de Compose, o defini
 
 - API del mismo origen: `VITE_API_URL` vacío; Nginx envía `/api/` a `BACKEND_URL`.
 - CORS directo: `VITE_API_URL` contiene el origen HTTPS del backend, sin `/api`.
-- El chat se abre únicamente desde `/gianna/`; el panel está en `/admin`.
+- El chat se abre únicamente desde `/gianna/`; el login del panel está en `/admin/login` y la sesión autenticada en `/admin/`.
+- El panel reconoce nombres y roles. Sólo los superadministradores administran usuarios y consultan auditoría; cada administrador puede cambiar su contraseña.
+- Las rutas desconocidas bajo `/admin/` devuelven 404.
 - El historial se guarda en el navegador. Los cupos se validan en el backend.
 
 En Coolify, seleccionar Dockerfile, directorio base `/`, Dockerfile `/Dockerfile`, puerto interno **80** y healthcheck **/health**. Configurar `BACKEND_URL` con una dirección accesible desde el contenedor del frontend. El valor de ejemplo `http://backend:8010` exige que exista un servicio con ese nombre en la misma red.
