@@ -1,0 +1,23 @@
+# Configuración privada
+.env
+.env.*
+!.env.example
+
+# Dependencias y compilación
+node_modules/
+dist/
+.astro/
+coverage/
+
+# Resultados de pruebas y capturas
+test-results/
+playwright-report/
+reports/captures/
+reports/playwright/
+
+# Datos locales y archivos temporales
+*.sqlite*
+*.db
+*.log
+.DS_Store
+Thumbs.db

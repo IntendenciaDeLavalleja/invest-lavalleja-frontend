@@ -1,6 +1,6 @@
 # Invest Lavalleja
 
-Este directorio conserva el portal original dentro del repositorio del agente Gianna. Para ejecutar la integración completa y `/admin`, compilar desde `../` y servir el frontend con Nginx, separado de la API en el puerto 8010. El chat anterior fue sustituido por el cliente Vite existente; ver [UPSTREAM.md](UPSTREAM.md) y el [README principal](../../README.md).
+Este directorio conserva el portal original dentro del proyecto frontend de Invest Lavalleja. Para ejecutar la integración completa y `/admin`, compilar desde `../` y servir el frontend con Nginx, separado de la API en el puerto 8010. El chat anterior fue sustituido por el cliente Vite existente; ver [UPSTREAM.md](UPSTREAM.md) y el [README principal](../README.md).
 
 Portal editorial de preproducción para explorar oportunidades, territorio y fuentes de Lavalleja. Está construido con Astro, React y TypeScript estricto: Astro genera las páginas y React se reserva para las herramientas interactivas.
 
@@ -36,7 +36,7 @@ $env:PUBLIC_INDEXING = 'true'
 npm run build
 ```
 
-`PUBLIC_SITE_URL` habilita canonical, Open Graph y sitemap. No hay formularios ni envíos externos: el dossier se guarda en `localStorage`, el resumen del proyecto en `sessionStorage` y las exportaciones son locales.
+`PUBLIC_SITE_URL` habilita canonical, Open Graph y sitemap. Las herramientas editoriales guardan el dossier en `localStorage`, el resumen del proyecto en `sessionStorage` y generan exportaciones locales. Gianna y el panel se conectan a la API independiente según la configuración del frontend.
 
 ## Contenido y assets
 
