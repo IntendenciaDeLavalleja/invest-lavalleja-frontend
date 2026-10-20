@@ -3,6 +3,7 @@
 dist
 node_modules
 backend
+sample-backend
 better-rag
 docs
 reports

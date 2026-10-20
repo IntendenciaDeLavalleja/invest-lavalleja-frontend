@@ -31,23 +31,24 @@ Gianna no inventa cifras, predios, beneficios fiscales, contactos ni disponibili
 | Buscador y explorador | Fuse.js, SVG del mapa | Búsqueda global y mapa de localidades |
 | Validación de datos | Zod | Comprueba el estado guardado en el navegador |
 | Backend | Python 3, Flask, Gunicorn | API y panel de administración |
-| Base de datos | SQLite | Documentos, versiones, aprobaciones y puntero activo |
+| Base de datos | MariaDB | Documentos, versiones, aprobaciones, sesiones y puntero activo |
 | Búsqueda vectorial | LanceDB | Índice de fragmentos por significado |
 | Embeddings | Bekko (`hotchpotch/bekko-embedding-v1-a8m`) en OpenVINO CPU | Convierte textos en vectores |
 | Reranker | Horizon (`Horizon-Labs/multilingual-reranker-small`) en ONNX CPU | Ordena los fragmentos por relevancia |
 | Agente | PydanticAI | Intérprete de turnos, agente de respuesta y memoria del hilo |
 | Modelo generativo | DeepSeek vía Ollama Cloud (API compatible con OpenAI) | Interpreta, redacta y decide si hay respuesta |
 | Pruebas | pytest, Vitest, ESLint, Playwright, axe | Backend, unidades, estilo y flujos de punta a punta |
-| Despliegue local | Docker Compose | Levanta Gianna y su base en contenedores |
+| Despliegue local | Docker Compose | API con MariaDB dedicada y LanceDB persistente |
 
 ### Estructura
 
 - `src/`: portal Astro, componentes React y estilos.
 - `src/data/`: catálogo versionado y manifiesto editorial de las páginas.
-- `backend/gianna/`: servicios de Gianna (búsqueda, agentes, memoria, validación, panel web).
-- `backend/docs/RAG_ENGINE.md`: arquitectura detallada del motor de búsqueda y del agente.
-- `better-rag/`: documento de conocimiento sectorial y su versión consolidada para alimentar el RAG.
+- La API, el panel y las migraciones se mantienen en el repositorio independiente [`invest-lavalleja-backend`](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend).
+- `better-rag/`: herramientas y documentos de preparación, validación y publicación de la base de conocimiento.
 - `public/`: recursos estáticos (imágenes, mapa, PDFs editoriales).
+
+Las herramientas de `better-rag/` usan el backend de Gianna. Si ambos repositorios están clonados uno junto al otro, lo detectan automáticamente; si están en ubicaciones distintas, define `GIANNA_BACKEND_ROOT` con la ruta local del repositorio backend. La preparación o publicación no se ejecuta automáticamente al validar el portal.
 
 ## Despliegue con Coolify
 
@@ -55,29 +56,16 @@ El portal y la API son recursos separados en Coolify. El portal se construye des
 
 ## Puesta en marcha de Gianna
 
-Gianna necesita el backend en Docker y una clave de Ollama Cloud. Desde `backend/`:
+Gianna requiere el backend independiente, una base MariaDB dedicada y una clave de Ollama Cloud. Seguí las instrucciones de instalación del [repositorio backend](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/README.md); su `.env` debe incluir `DATABASE_URL` y, para pruebas humanas, `DATABASE_URL_HUMAN_TEST`, además de las variables de Ollama. No reutilices la base de otra aplicación ni publiques el `.env`.
 
-```powershell
-Copy-Item .env.example .env
-# Editar .env: completar OLLAMA_API_KEY (no se comparte ni se versiona)
-docker compose -f compose.yaml -f compose.human-test.yaml --env-file .env up -d --build
-```
-
-Después, cargar la base de conocimiento de prueba (solo registros públicos) y reiniciar la API:
-
-```powershell
-docker compose -f compose.yaml -f compose.human-test.yaml --env-file .env exec -T api python -m scripts.enable_human_test /app/data/invest_lavalleja_2026.gianna.json
-docker compose -f compose.yaml -f compose.human-test.yaml --env-file .env restart api
-```
-
-Esperar a que `http://127.0.0.1:8001/api/config` responda `available: true`. Para que el portal se conecte, `.env.local` en la raíz debe contener `PUBLIC_GIANNA_API_BASE=http://localhost:8001`. Luego:
+Cuando la API de prueba responda `available: true` en `http://127.0.0.1:8001/api/config`, configura `.env.local` en la raíz con `PUBLIC_GIANNA_API_BASE=http://localhost:8001`. Luego inicia el portal:
 
 ```powershell
 npm install
 npm run dev
 ```
 
-Abrir `http://localhost:4321/gianna/`. Para detener solo la pila de prueba, usar `docker compose ... stop` (sin `down -v`, que borraría los volúmenes). Más detalle en [backend/README.md](backend/README.md).
+Abrir `http://localhost:4321/gianna/`. Para detener los servicios, usa los comandos documentados en el [README del backend](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/README.md); evita borrar volúmenes persistentes.
 
 ## Desarrollo
 
@@ -135,8 +123,8 @@ Las advertencias editoriales distinguen datos de fuente, interpretación comerci
 
 ## Documentación adicional
 
-- [Motor RAG y agente de Gianna](backend/docs/RAG_ENGINE.md): arquitectura, modelos y contrato de respuesta.
-- [Backend de Gianna](backend/README.md): despliegue, panel, bases de conocimiento y pruebas.
+- [Motor RAG y agente de Gianna](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/docs/RAG_ENGINE.md): arquitectura, modelos y contrato de respuesta.
+- [Backend de Gianna](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend): despliegue, panel, base de datos y pruebas.
 - [Plan e inventario](docs/IMPLEMENTATION_PLAN.md)
 - [Reporte de pruebas y limitaciones](docs/TEST_REPORT.md)
 - [Normas del proyecto](AGENTS.md)
