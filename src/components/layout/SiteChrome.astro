@@ -1,0 +1,27 @@
+<script>
+  const globalKey = '__investLavallejaChrome';
+  const chromeWindow = window as Window & { __investLavallejaChrome?: AbortController };
+  const setup = () => {
+    chromeWindow[globalKey]?.abort?.();
+    const controller = new AbortController();
+    chromeWindow[globalKey] = controller;
+    const signal = controller.signal;
+    const openSearch = (event?: Event) => {
+      const trigger = event?.target instanceof Element ? event.target.closest('[data-open-search]') : null;
+      if (event && !trigger) return;
+      event?.preventDefault();
+      (window as Window & { __investSearchPending?: boolean }).__investSearchPending = true;
+      window.dispatchEvent(new CustomEvent('invest:open-search'));
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') openSearch(event);
+    };
+    document.addEventListener('click', openSearch, { signal, capture: true });
+    document.addEventListener('keydown', onKeyDown, { signal });
+  };
+
+  if (!chromeWindow[globalKey]) {
+    setup();
+    document.addEventListener('astro:page-load', setup, { once: false });
+  }
+</script>

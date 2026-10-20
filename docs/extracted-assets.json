@@ -1,0 +1,39 @@
+[
+  {
+    "publicPath": "/media/block-banners/agro-conceptual.webp",
+    "mime": "image/webp",
+    "bytes": 298140,
+    "referencePath": "/media/agro-conceptual.webp",
+    "width": 1600,
+    "height": 900,
+    "derivative": true
+  },
+  {
+    "publicPath": "/media/block-banners/hospitalidad-conceptual.webp",
+    "mime": "image/webp",
+    "bytes": 354662,
+    "referencePath": "/media/hospitalidad-conceptual.webp",
+    "width": 1600,
+    "height": 900,
+    "derivative": true
+  },
+  {
+    "publicPath": "/media/block-banners/serrano-conceptual.webp",
+    "mime": "image/webp",
+    "bytes": 362740,
+    "referencePath": "/media/serrano-conceptual.webp",
+    "width": 1600,
+    "height": 900,
+    "derivative": true
+  },
+  {
+    "publicPath": "/documentos/folleto-invest-lavalleja.pdf",
+    "mime": "application/pdf",
+    "bytes": 1876444
+  },
+  {
+    "publicPath": "/documentos/guia-invest-lavalleja.pdf",
+    "mime": "application/pdf",
+    "bytes": 822829
+  }
+]
