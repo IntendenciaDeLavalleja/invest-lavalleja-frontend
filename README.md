@@ -49,6 +49,10 @@ Gianna no inventa cifras, predios, beneficios fiscales, contactos ni disponibili
 - `better-rag/`: documento de conocimiento sectorial y su versión consolidada para alimentar el RAG.
 - `public/`: recursos estáticos (imágenes, mapa, PDFs editoriales).
 
+## Despliegue con Coolify
+
+El portal y la API son recursos separados en Coolify. El portal se construye desde este repositorio con el `Dockerfile` de la raíz y escucha en el puerto interno `80`; configurar los argumentos de construcción indicados en [docs/COOLIFY.md](docs/COOLIFY.md). La API se despliega desde el repositorio independiente `invest-lavalleja-backend`; seguir allí las instrucciones de [despliegue de Coolify](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/docs/COOLIFY.md).
+
 ## Puesta en marcha de Gianna
 
 Gianna necesita el backend en Docker y una clave de Ollama Cloud. Desde `backend/`:
