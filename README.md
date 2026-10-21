@@ -2,10 +2,10 @@
 
 Invest Lavalleja es un portal de información para inversores interesados en el departamento de Lavalleja (Uruguay). Reúne zonas, sectores, datos, casos, pasos y preguntas frecuentes, y tiene un asistente conversacional llamado **Gianna Invest** que responde preguntas usando solo la base de conocimiento del proyecto.
 
-El repositorio tiene dos partes que trabajan juntas:
+El portal y la API trabajan juntos y se mantienen en repositorios separados:
 
-- **Portal web** (raíz del repositorio): el sitio que ve el inversor. Genera las páginas con Astro y usa React solo para las herramientas interactivas, como el buscador, el mapa, el dossier y el chat.
-- **Backend de Gianna** (carpeta `backend/`): el servicio que recibe las preguntas, busca en la base de conocimiento y redacta las respuestas con sus fuentes.
+- **Portal web** (este repositorio): el sitio que ve el inversor. Genera las páginas con Astro y usa React solo para las herramientas interactivas, como el buscador, el mapa, el dossier y el chat.
+- **Backend de Gianna** ([repositorio backend](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend)): el servicio que recibe las preguntas, busca en la base de conocimiento y redacta las respuestas con sus fuentes.
 
 ## Qué es Gianna Invest
 
@@ -56,12 +56,12 @@ El portal y la API son recursos separados en Coolify. El portal se construye des
 
 ## Puesta en marcha de Gianna
 
-Gianna requiere el backend independiente, una base MariaDB dedicada y una clave de Ollama Cloud. Seguí las instrucciones de instalación del [repositorio backend](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/README.md); su `.env` debe incluir `DATABASE_URL` y, para pruebas humanas, `DATABASE_URL_HUMAN_TEST`, además de las variables de Ollama. No reutilices la base de otra aplicación ni publiques el `.env`.
+Gianna requiere el backend independiente, una base MariaDB dedicada y una clave de Ollama Cloud. Seguí las instrucciones de instalación del [repositorio backend](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/README.md); cada instalación configura una sola `DATABASE_URL`, además de los secretos y las variables de Ollama y correo. Estas credenciales se configuran únicamente en la API.
 
-Cuando la API de prueba responda `available: true` en `http://127.0.0.1:8001/api/config`, configura `.env.local` en la raíz con `PUBLIC_GIANNA_API_BASE=http://localhost:8001`. Luego inicia el portal:
+Cuando la API local responda `available: true` en `http://127.0.0.1:8000/api/config`, configura `.env.local` en la raíz con `PUBLIC_GIANNA_API_BASE=http://localhost:8000`. Si elegiste la pila opcional de pruebas humanas, usá su puerto `8001`. Luego inicia el portal:
 
 ```powershell
-npm install
+npm ci
 npm run dev
 ```
 

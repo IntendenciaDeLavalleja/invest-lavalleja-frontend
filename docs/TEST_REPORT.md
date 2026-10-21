@@ -1,10 +1,19 @@
 # Reporte de verificación — Invest Lavalleja
 
+## Verificación de publicación · 21/10/2026
+
+`npm run verify` completó tipos, lint, **9 pruebas unitarias**, la compilación de **32 páginas** y Playwright con **33 aprobadas y 1 omitida** (la captura de referencia duplicada en móvil). Las pruebas de Gianna interceptan la API; no consumen Ollama ni evalúan la calidad factual del modelo.
+
+Se actualizó Vitest a **5.0.5** y se renovaron las resoluciones vulnerables de las herramientas de construcción y pruebas. La versión de Node 24 del proyecto cumple los requisitos de la [migración de Vitest](https://vitest.dev/guide/migration/). `npm audit` terminó con **0 vulnerabilidades** en esta comprobación.
+
+El repositorio frontend independiente sustituye el workflow heredado del backend por una validación propia con Node 24, instalación reproducible, Chromium y `npm run verify`. Las credenciales y la configuración MariaDB pertenecen al repositorio backend; el portal solo necesita los valores públicos documentados para su compilación.
+
+
 ## Gianna como asistente de información · 19/10/2026
 
 Se actualizaron la presentación, el título SEO, el saludo, el encabezado del chat, el placeholder y la invitación desde portada para describir un rol informativo, no de asesoramiento. Se mantienen el aviso de alcance, las fuentes, la alternativa sin JavaScript y los controles de sesión/CAPTCHA.
 
-Check, lint, **9 pruebas unitarias** y build de **32 páginas** correctos. La suite Gianna de escritorio/móvil terminó **12/12** en su corrida final, con API interceptada. El backend pasó **166 pruebas** y el escenario informativo de seis consultas por la API/proveedor reales pasó **6/6**. Resultados, incidencia del primer lote móvil y límites en [validación del backend](../backend/reports/VALIDACION.md).
+Check, lint, **9 pruebas unitarias** y build de **32 páginas** correctos. La suite Gianna de escritorio/móvil terminó **12/12** en su corrida final, con API interceptada. El backend pasó **166 pruebas** y el escenario informativo de seis consultas por la API/proveedor reales pasó **6/6**. Resultados, incidencia del primer lote móvil y límites en [validación del backend](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/reports/VALIDACION.md).
 
 ## Actualización de banners y mapa · 19/10/2026
 
