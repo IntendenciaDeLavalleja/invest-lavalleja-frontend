@@ -2,26 +2,41 @@
 
 Invest Lavalleja es un portal de información para inversores interesados en el departamento de Lavalleja (Uruguay). Reúne zonas, sectores, datos, casos, pasos y preguntas frecuentes, y tiene un asistente conversacional llamado **Gianna Invest** que responde preguntas usando solo la base de conocimiento del proyecto.
 
-El portal y la API trabajan juntos y se mantienen en repositorios separados:
+El repositorio tiene dos partes que trabajan juntas:
 
-- **Portal web** (este repositorio): el sitio que ve el inversor. Genera las páginas con Astro y usa React solo para las herramientas interactivas, como el buscador, el mapa, el dossier y el chat.
-- **Backend de Gianna** ([repositorio backend](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend)): el servicio que recibe las preguntas, busca en la base de conocimiento y redacta las respuestas con sus fuentes.
+- **Portal web** (raíz del repositorio): el sitio que ve el inversor. Genera las páginas con Astro y usa React solo para las herramientas interactivas, como el buscador, el mapa, el dossier y el chat.
+- **Backend de Gianna** (carpeta `backend/`): el servicio que recibe las preguntas, busca en la base de conocimiento y redacta las respuestas con sus fuentes.
 
 ## Qué es Gianna Invest
 
-Gianna no es un buscador de palabras ni una lista de respuestas fijas. Es un agente de asesoría informativa: entiende lo que se le pregunta, recuerda lo que ya se conversó en el mismo hilo y responde con lo que encuentra en su base. Si la base no tiene información sobre algo, lo dice.
+Gianna no es un buscador de palabras ni una lista de respuestas fijas. Es un **agente con herramientas** que entiende lo que se le pregunta, recuerda lo conversado en el hilo y responde solo con lo que encuentra en la guía de conocimiento del portal. Si la guía no cubre algo, lo dice y aporta lo documentado que sí aplica (zonas, condiciones, trámites, qué validar).
 
 Cuando un inversor escribe una pregunta, ocurre lo siguiente:
 
-1. **Recibe el mensaje junto con la memoria del hilo.** Gianna guarda, dentro de la sesión, lo que el inversor ya dijo: la zona que le interesa, el tipo de proyecto, lo que ya se respondió.
-2. **Interpreta qué necesita.** Un modelo de lenguaje lee el mensaje y produce un plan: qué tipo de pedido es (dónde ubicarse, oportunidades, requisitos, comparar opciones, próximos pasos), qué necesita realmente la persona y qué buscar en la base. Por ejemplo, «quiero poner un boliche» se entiende como una pregunta sobre *dónde* y *qué ofrece cada zona*, no como una consulta de trámites.
-3. **Busca en la base de conocimiento.** Combina dos tipos de búsqueda: por significado (embeddings) y por palabras clave (BM25), usando las consultas que armó el intérprete.
-4. **Ordena los resultados.** Un reranker puntúa qué tan relacionado está cada fragmento con la necesidad de la persona, y ese orden se combina con el de las búsquedas. Se usan solo registros públicos y aprobados.
-5. **Redacta la respuesta.** Un agente de respuesta arma el texto con la evidencia encontrada, trata al inversor como alguien que sabe lo que quiere y compara las opciones cuando hay varias. Si el pedido es puntual (un requisito, un dato), puede hacer una segunda lectura de la base.
-6. **Verifica antes de mostrar.** La respuesta debe indicar si la base alcanza o no, y citar sus fuentes. El servidor descarta las fuentes que no tienen relación con el texto y nunca muestra una respuesta sin fuente.
-7. **Muestra la respuesta, sus fuentes y la memoria actualizada.** Las fuentes aparecen aparte en la interfaz.
+```text
+pregunta ─► seguridad determinista ─► (acusaciones, insultos, delitos: respuesta fija, sin modelo)
+   │
+   ▼
+búsqueda híbrida inicial: vectores (Granite) + palabras clave (BM25 español), fusión RRF, ≈60 ms
+   │      un seguimiento corto ("¿y en Varela?") se busca junto con la pregunta anterior
+   ▼
+el modelo lee la evidencia numerada y, si hace falta, usa sus herramientas (hasta 4 pasos):
+   ├─ buscar_en_la_guia(consulta, zonas?, tipo?)
+   └─ ver_ficha(identificadores del mapa de la guía)
+   ▼
+respuesta breve con citas [n] ─► el servidor descarta citas inexistentes, renumera y adjunta fuentes
+   │
+   └─ si el proveedor falla: respuesta degradada con las fichas más relacionadas
+```
 
-Gianna no inventa cifras, predios, beneficios fiscales, contactos ni disponibilidad, y no da asesoramiento legal, fiscal o financiero definitivo.
+1. **Recibe el mensaje junto con el historial cifrado de la sesión.**
+2. **Pasa por la compuerta de seguridad**, que no depende del modelo.
+3. **Busca en la guía.** Combina significado (embeddings) y palabras clave (BM25) y usa solo registros públicos y aprobados. La guía está organizada en fichas completas con una cabecera (título, tema, sección, zonas).
+4. **Razona con herramientas.** El modelo ve un mapa de toda la guía, puede buscar de nuevo o leer fichas completas, y nunca afirma que algo no está sin haberlo mirado.
+5. **Redacta con citas.** Respeta el nivel de evidencia de cada ficha (dato documentado, hipótesis, ejemplo didáctico), compara zonas u oportunidades con criterios documentados y no declara una opción como «la mejor».
+6. **Valida antes de mostrar.** Las citas `[n]` se comprueban contra lo realmente recuperado y los códigos internos se traducen a nombres.
+
+Gianna no inventa cifras, predios, beneficios fiscales, contactos ni disponibilidad, y no da asesoramiento legal, fiscal o financiero definitivo. Una cita válida no garantiza que la afirmación sea correcta: las respuestas deben contrastarse con sus fuentes.
 
 ### Tecnologías
 
@@ -32,23 +47,23 @@ Gianna no inventa cifras, predios, beneficios fiscales, contactos ni disponibili
 | Validación de datos | Zod | Comprueba el estado guardado en el navegador |
 | Backend | Python 3, Flask, Gunicorn | API y panel de administración |
 | Base de datos | MariaDB | Documentos, versiones, aprobaciones, sesiones y puntero activo |
-| Búsqueda vectorial | LanceDB | Índice de fragmentos por significado |
-| Embeddings | Bekko (`hotchpotch/bekko-embedding-v1-a8m`) en OpenVINO CPU | Convierte textos en vectores |
-| Reranker | Horizon (`Horizon-Labs/multilingual-reranker-small`) en ONNX CPU | Ordena los fragmentos por relevancia |
-| Agente | PydanticAI | Intérprete de turnos, agente de respuesta y memoria del hilo |
-| Modelo generativo | DeepSeek vía Ollama Cloud (API compatible con OpenAI) | Interpreta, redacta y decide si hay respuesta |
+| Búsqueda | LanceDB (coseno exacto + BM25 español, fusión RRF) | Índice de fichas por significado y por palabras |
+| Embeddings | Granite 97M multilingüe R2 (`ibm-granite/granite-embedding-97m-multilingual-r2`), ONNX cuantizado en CPU | Convierte textos en vectores de 384 dimensiones |
+| Reranker | mMARCO MiniLM (ONNX CPU), solo laboratorio | No está en el camino de la consulta: no mejoró los aciertos y costaba ~5 s |
+| Agente | Bucle propio con herramientas (`services/agent.py`) | Búsqueda, lectura de fichas, citas validadas y degradación sin proveedor |
+| Modelo generativo | DeepSeek vía Ollama Cloud (API nativa con herramientas), con modelo alternativo | Redacta la respuesta |
 | Pruebas | pytest, Vitest, ESLint, Playwright, axe | Backend, unidades, estilo y flujos de punta a punta |
-| Despliegue local | Docker Compose | API con MariaDB dedicada y LanceDB persistente |
+| Despliegue local | Docker Compose o `scripts/run_local.py` | Levanta la API y conserva LanceDB; MariaDB se configura mediante su URL |
 
 ### Estructura
 
 - `src/`: portal Astro, componentes React y estilos.
 - `src/data/`: catálogo versionado y manifiesto editorial de las páginas.
-- La API, el panel y las migraciones se mantienen en el repositorio independiente [`invest-lavalleja-backend`](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend).
-- `better-rag/`: herramientas y documentos de preparación, validación y publicación de la base de conocimiento.
+- `backend/gianna/`: servicios de Gianna (agente, recuperación, prompts, seguridad, panel web).
+- `backend/docs/RAG_ENGINE.md`: arquitectura de la base de conocimiento y del flujo; `backend/docs/AGENT_DESIGN.md`: política de respuesta.
+- `backend/evals/` y `backend/scripts/evaluate_*.py`: conjuntos de evaluación de recuperación y de conversaciones.
+- `better-rag/`: documento de conocimiento sectorial, su versión consolidada y `tools/restructure.py`, que arma las fichas.
 - `public/`: recursos estáticos (imágenes, mapa, PDFs editoriales).
-
-Las herramientas de `better-rag/` usan el backend de Gianna. Si ambos repositorios están clonados uno junto al otro, lo detectan automáticamente; si están en ubicaciones distintas, define `GIANNA_BACKEND_ROOT` con la ruta local del repositorio backend. La preparación o publicación no se ejecuta automáticamente al validar el portal.
 
 ## Despliegue con Coolify
 
@@ -56,16 +71,26 @@ El portal y la API son recursos separados en Coolify. El portal se construye des
 
 ## Puesta en marcha de Gianna
 
-Gianna requiere el backend independiente, una base MariaDB dedicada y una clave de Ollama Cloud. Seguí las instrucciones de instalación del [repositorio backend](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/README.md); cada instalación configura una sola `DATABASE_URL`, además de los secretos y las variables de Ollama y correo. Estas credenciales se configuran únicamente en la API.
-
-Cuando la API local responda `available: true` en `http://127.0.0.1:8000/api/config`, configura `.env.local` en la raíz con `PUBLIC_GIANNA_API_BASE=http://localhost:8000`. Si elegiste la pila opcional de pruebas humanas, usá su puerto `8001`. Luego inicia el portal:
+Gianna necesita el backend en Docker, una base MariaDB dedicada y una clave de Ollama Cloud. Cada instalación utiliza una sola `DATABASE_URL`. Para desarrollo local, desde `backend/`:
 
 ```powershell
-npm ci
+python scripts/setup_env.py --local
+# Editar .env: completar DATABASE_URL y OLLAMA_API_KEY.
+docker compose -f compose.yaml -f compose.local.yaml up -d --build
+docker compose -f compose.yaml -f compose.local.yaml run --rm api python -m scripts.prepare_models
+docker compose -f compose.yaml -f compose.local.yaml exec api flask --app wsgi create-admin
+```
+
+Abrir `http://localhost:8000/admin/login` para cargar, revisar, indexar y publicar la base de conocimiento desde el panel.
+
+Esperar a que `http://127.0.0.1:8000/api/config` responda `available: true`. Para que el portal se conecte, `.env.local` en la raíz debe contener `PUBLIC_GIANNA_API_BASE=http://localhost:8000`. Luego:
+
+```powershell
+npm install
 npm run dev
 ```
 
-Abrir `http://localhost:4321/gianna/`. Para detener los servicios, usa los comandos documentados en el [README del backend](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/README.md); evita borrar volúmenes persistentes.
+Abrir `http://localhost:4321/gianna/`. Sin Docker (por ejemplo en Windows) se puede levantar la API con `python scripts/run_local.py --port 8001 --human-test` desde `backend/`, usando `PUBLIC_GIANNA_API_BASE=http://localhost:8001`. Para detener la API local, usar `docker compose -f compose.yaml -f compose.local.yaml stop` desde `backend/`. El despliegue de producción usa únicamente `compose.yaml`; más detalle en [backend/README.md](backend/README.md).
 
 ## Desarrollo
 
@@ -123,8 +148,10 @@ Las advertencias editoriales distinguen datos de fuente, interpretación comerci
 
 ## Documentación adicional
 
-- [Motor RAG y agente de Gianna](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/docs/RAG_ENGINE.md): arquitectura, modelos y contrato de respuesta.
-- [Backend de Gianna](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend): despliegue, panel, base de datos y pruebas.
+- [Motor RAG de Gianna](backend/docs/RAG_ENGINE.md): arquitectura, flujo de una consulta, base de conocimiento y mediciones.
+- [Diseño del agente](backend/docs/AGENT_DESIGN.md): política de respuesta, herramientas y citas.
+- [Validación del agente](backend/reports/VALIDACION.md): resultados reales y límites.
+- [Backend de Gianna](backend/README.md): despliegue, panel, bases de conocimiento y pruebas.
 - [Plan e inventario](docs/IMPLEMENTATION_PLAN.md)
 - [Reporte de pruebas y limitaciones](docs/TEST_REPORT.md)
 - [Normas del proyecto](AGENTS.md)

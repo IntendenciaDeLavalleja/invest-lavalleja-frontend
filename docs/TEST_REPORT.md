@@ -1,5 +1,9 @@
 # Reporte de verificación — Invest Lavalleja
 
+## Rediseño del agente Gianna · 29/10/2026
+
+El backend de Gianna se reescribió como agente con herramientas (ver [RAG_ENGINE.md](../backend/docs/RAG_ENGINE.md)). Lo único que cambió en el portal es `Sources.tsx` (las fuentes muestran el número de cita `[n]` y el nivel de evidencia en español); el contrato JSON del chat se mantiene. Verificado en esta fecha: `npm run lint` sin hallazgos y `vitest` **9/9**; `pytest` del backend **193 aprobadas, 3 omitidas**; recorrido manual en el navegador (captcha → sesión → pregunta → respuesta con fuentes) contra la API local. **No se reejecutó** la suite Playwright ni el build de 32 páginas en esta fecha. Resultados y límites del agente: [backend/reports/VALIDACION.md](../backend/reports/VALIDACION.md).
+
 ## Verificación de publicación · 21/10/2026
 
 `npm run verify` completó tipos, lint, **9 pruebas unitarias**, la compilación de **32 páginas** y Playwright con **33 aprobadas y 1 omitida** (la captura de referencia duplicada en móvil). Las pruebas de Gianna interceptan la API; no consumen Ollama ni evalúan la calidad factual del modelo.
@@ -13,7 +17,7 @@ El repositorio frontend independiente sustituye el workflow heredado del backend
 
 Se actualizaron la presentación, el título SEO, el saludo, el encabezado del chat, el placeholder y la invitación desde portada para describir un rol informativo, no de asesoramiento. Se mantienen el aviso de alcance, las fuentes, la alternativa sin JavaScript y los controles de sesión/CAPTCHA.
 
-Check, lint, **9 pruebas unitarias** y build de **32 páginas** correctos. La suite Gianna de escritorio/móvil terminó **12/12** en su corrida final, con API interceptada. El backend pasó **166 pruebas** y el escenario informativo de seis consultas por la API/proveedor reales pasó **6/6**. Resultados, incidencia del primer lote móvil y límites en [validación del backend](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/reports/VALIDACION.md).
+Check, lint, **9 pruebas unitarias** y build de **32 páginas** correctos. La suite Gianna de escritorio/móvil terminó **12/12** en su corrida final, con API interceptada. El backend pasó **166 pruebas** y el escenario informativo de seis consultas por la API/proveedor reales pasó **6/6**. Resultados, incidencia del primer lote móvil y límites en [validación del backend](../backend/reports/VALIDACION.md).
 
 ## Actualización de banners y mapa · 19/10/2026
 
