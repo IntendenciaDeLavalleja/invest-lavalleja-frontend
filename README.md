@@ -2,10 +2,11 @@
 
 Invest Lavalleja es un portal de información para inversores interesados en el departamento de Lavalleja (Uruguay). Reúne zonas, sectores, datos, casos, pasos y preguntas frecuentes, y tiene un asistente conversacional llamado **Gianna Invest** que responde preguntas usando solo la base de conocimiento del proyecto.
 
-El repositorio tiene dos partes que trabajan juntas:
+Este repositorio central reúne el portal y una copia del backend. Los despliegues
+institucionales utilizan los repositorios independientes de frontend y backend:
 
-- **Portal web** (raíz del repositorio): el sitio que ve el inversor. Genera las páginas con Astro y usa React solo para las herramientas interactivas, como el buscador, el mapa, el dossier y el chat.
-- **Backend de Gianna** (carpeta `backend/`): el servicio que recibe las preguntas, busca en la base de conocimiento y redacta las respuestas con sus fuentes.
+- **Portal web** (raíz de este repositorio; [frontend institucional](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-frontend)): genera las páginas con Astro y usa React para las herramientas interactivas.
+- **Backend de Gianna** (`backend/`; [backend institucional](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend)): recibe las preguntas, busca en la base de conocimiento y redacta respuestas con sus fuentes.
 
 ## Qué es Gianna Invest
 
@@ -17,7 +18,7 @@ Cuando un inversor escribe una pregunta, ocurre lo siguiente:
 pregunta ─► seguridad determinista ─► (acusaciones, insultos, delitos: respuesta fija, sin modelo)
    │
    ▼
-búsqueda híbrida inicial: vectores (Granite) + palabras clave (BM25 español), fusión RRF, ≈60 ms
+búsqueda híbrida inicial: vectores (Granite) + palabras clave (BM25 español), fusión RRF, ≈145 ms medidos
    │      un seguimiento corto ("¿y en Varela?") se busca junto con la pregunta anterior
    ▼
 el modelo lee la evidencia numerada y, si hace falta, usa sus herramientas (hasta 4 pasos):
@@ -47,50 +48,57 @@ Gianna no inventa cifras, predios, beneficios fiscales, contactos ni disponibili
 | Validación de datos | Zod | Comprueba el estado guardado en el navegador |
 | Backend | Python 3, Flask, Gunicorn | API y panel de administración |
 | Base de datos | MariaDB | Documentos, versiones, aprobaciones, sesiones y puntero activo |
-| Búsqueda | LanceDB (coseno exacto + BM25 español, fusión RRF) | Índice de fichas por significado y por palabras |
-| Embeddings | Granite 97M multilingüe R2 (`ibm-granite/granite-embedding-97m-multilingual-r2`), ONNX cuantizado en CPU | Convierte textos en vectores de 384 dimensiones |
-| Reranker | mMARCO MiniLM (ONNX CPU), solo laboratorio | No está en el camino de la consulta: no mejoró los aciertos y costaba ~5 s |
+| Búsqueda | LanceDB 0.40 (coseno exacto + BM25 español, fusión RRF `k=60`) | Índice de fichas por significado y por palabras |
+| Embeddings | `ibm-granite/granite-embedding-97m-multilingual-r2`, ONNX CPU (`model_quint8_avx2.onnx`) | 384 dimensiones, pooling CLS, L2, 512 tokens, sin prefijos |
+| Reranker | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`, ONNX CPU | Fuera del chat: solo verificación de modelos y evaluación comparativa |
 | Agente | Bucle propio con herramientas (`services/agent.py`) | Búsqueda, lectura de fichas, citas validadas y degradación sin proveedor |
-| Modelo generativo | DeepSeek vía Ollama Cloud (API nativa con herramientas), con modelo alternativo | Redacta la respuesta |
+| Modelo generativo | `deepseek-v4.1-flash:1017` vía Ollama Cloud (API nativa con herramientas) | Redacta la respuesta; alternativa `deepseek-v4.1-flash` |
 | Pruebas | pytest, Vitest, ESLint, Playwright, axe | Backend, unidades, estilo y flujos de punta a punta |
-| Despliegue local | Docker Compose o `scripts/run_local.py` | Levanta la API y conserva LanceDB; MariaDB se configura mediante su URL |
+| Despliegue local | Docker Compose o `scripts/run_local.py` | API con MariaDB dedicada y LanceDB persistente; MariaDB se configura mediante su URL |
+
+### Modelos y versiones
+
+- **Motor vigente:** `granite-mmarco-lance-v3`, con representación documental `cards-context-v5`.
+- **Embedding:** `ibm-granite/granite-embedding-97m-multilingual-r2`, revisión `835ad140…`, ONNX CPU, 384 dimensiones, CLS, L2, 512 tokens.
+- **Reranker:** `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`, revisión `1427fd65…`, ONNX CPU, 512 tokens. No se consulta en el chat.
+- **Generación:** `deepseek-v4.1-flash:1017` en esta instalación, con `deepseek-v4.1-flash` como alternativa. El parámetro `think` se decide por familia en `services/runtime.py`.
+- **Legado:** las versiones publicadas con `bekko-horizon-lance-v2` siguen consultables con su propio par de modelos; no se mezclan vectores entre perfiles.
+
+Cada versión guarda una huella con modelo, revisión, pooling, normalización, runtime, dimensión, representación y hashes. Cambiar cualquiera de esos valores exige construir y evaluar una versión nueva. Detalle completo en [backend/docs/RAG_ENGINE.md](backend/docs/RAG_ENGINE.md).
 
 ### Estructura
 
 - `src/`: portal Astro, componentes React y estilos.
 - `src/data/`: catálogo versionado y manifiesto editorial de las páginas.
-- `backend/gianna/`: servicios de Gianna (agente, recuperación, prompts, seguridad, panel web).
+- La API, el panel y las migraciones se mantienen en el repositorio independiente [`invest-lavalleja-backend`](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend).
+- `backend/gianna/`: copia local de los servicios de Gianna (agente, recuperación, prompts, seguridad, panel web).
 - `backend/docs/RAG_ENGINE.md`: arquitectura de la base de conocimiento y del flujo; `backend/docs/AGENT_DESIGN.md`: política de respuesta.
 - `backend/evals/` y `backend/scripts/evaluate_*.py`: conjuntos de evaluación de recuperación y de conversaciones.
 - `better-rag/`: documento de conocimiento sectorial, su versión consolidada y `tools/restructure.py`, que arma las fichas.
 - `public/`: recursos estáticos (imágenes, mapa, PDFs editoriales).
 
+Las herramientas de `better-rag/` usan el backend de Gianna. Si ambos repositorios están clonados uno junto al otro, lo detectan automáticamente; si están en ubicaciones distintas, define `GIANNA_BACKEND_ROOT` con la ruta local del repositorio backend. La preparación o publicación no se ejecuta automáticamente al validar el portal.
+
 ## Despliegue con Coolify
 
-El portal y la API son recursos separados en Coolify. El portal se construye desde este repositorio con el `Dockerfile` de la raíz y escucha en el puerto interno `80`; configurar los argumentos de construcción indicados en [docs/COOLIFY.md](docs/COOLIFY.md). La API se despliega desde el repositorio independiente `invest-lavalleja-backend`; seguir allí las instrucciones de [despliegue de Coolify](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/docs/COOLIFY.md).
+El portal y la API son recursos separados en Coolify. En la instalación institucional,
+se despliegan desde los repositorios independientes de frontend y backend; una
+actualización de este repositorio central no actualiza automáticamente esas fuentes.
+Para el backend, revisar el [plan de persistencia, recuperación y rollback](backend/docs/RECUPERACION.md)
+antes de cualquier despliegue. El portal escucha en el puerto interno `80`.
 
 ## Puesta en marcha de Gianna
 
-Gianna necesita el backend en Docker, una base MariaDB dedicada y una clave de Ollama Cloud. Cada instalación utiliza una sola `DATABASE_URL`. Para desarrollo local, desde `backend/`:
+Gianna requiere el backend independiente, una base MariaDB dedicada y una clave de Ollama Cloud. Seguí las instrucciones de instalación del [repositorio backend](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/README.md); cada instalación configura una sola `DATABASE_URL`, además de los secretos y las variables de Ollama y correo. Estas credenciales se configuran únicamente en la API.
+
+Cuando la API local responda `available: true` en `http://127.0.0.1:8000/api/config`, configura `.env.local` en la raíz con `PUBLIC_GIANNA_API_BASE=http://localhost:8000`. Si elegiste la pila opcional de pruebas humanas, usá su puerto `8001`. Luego inicia el portal:
 
 ```powershell
-python scripts/setup_env.py --local
-# Editar .env: completar DATABASE_URL y OLLAMA_API_KEY.
-docker compose -f compose.yaml -f compose.local.yaml up -d --build
-docker compose -f compose.yaml -f compose.local.yaml run --rm api python -m scripts.prepare_models
-docker compose -f compose.yaml -f compose.local.yaml exec api flask --app wsgi create-admin
-```
-
-Abrir `http://localhost:8000/admin/login` para cargar, revisar, indexar y publicar la base de conocimiento desde el panel.
-
-Esperar a que `http://127.0.0.1:8000/api/config` responda `available: true`. Para que el portal se conecte, `.env.local` en la raíz debe contener `PUBLIC_GIANNA_API_BASE=http://localhost:8000`. Luego:
-
-```powershell
-npm install
+npm ci
 npm run dev
 ```
 
-Abrir `http://localhost:4321/gianna/`. Sin Docker (por ejemplo en Windows) se puede levantar la API con `python scripts/run_local.py --port 8001 --human-test` desde `backend/`, usando `PUBLIC_GIANNA_API_BASE=http://localhost:8001`. Para detener la API local, usar `docker compose -f compose.yaml -f compose.local.yaml stop` desde `backend/`. El despliegue de producción usa únicamente `compose.yaml`; más detalle en [backend/README.md](backend/README.md).
+Abrir `http://localhost:4321/gianna/`. Sin Docker (por ejemplo en Windows) se puede levantar la API con `python scripts/run_local.py --port 8001 --human-test` desde el directorio del backend, usando `PUBLIC_GIANNA_API_BASE=http://localhost:8001`. Para detener los servicios, usá los comandos documentados en el [README del backend](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/README.md); evitá borrar volúmenes persistentes.
 
 ## Desarrollo
 
@@ -148,10 +156,10 @@ Las advertencias editoriales distinguen datos de fuente, interpretación comerci
 
 ## Documentación adicional
 
-- [Motor RAG de Gianna](backend/docs/RAG_ENGINE.md): arquitectura, flujo de una consulta, base de conocimiento y mediciones.
+- [Motor RAG y agente de Gianna](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend/blob/main/docs/RAG_ENGINE.md): arquitectura, modelos y contrato de respuesta.
 - [Diseño del agente](backend/docs/AGENT_DESIGN.md): política de respuesta, herramientas y citas.
 - [Validación del agente](backend/reports/VALIDACION.md): resultados reales y límites.
-- [Backend de Gianna](backend/README.md): despliegue, panel, bases de conocimiento y pruebas.
+- [Backend de Gianna](https://github.com/IntendenciaDeLavalleja/invest-lavalleja-backend): despliegue, panel, base de datos y pruebas; [copia local del README](backend/README.md).
 - [Plan e inventario](docs/IMPLEMENTATION_PLAN.md)
 - [Reporte de pruebas y limitaciones](docs/TEST_REPORT.md)
 - [Normas del proyecto](AGENTS.md)
